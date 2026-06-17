@@ -1,0 +1,21 @@
+discord:
+  webhook_url: "https://discord.com/api/webhooks/1516628842796548199/3V1sj5DDbd2l19c1mYPwpZ8O6WCLgJBXHQuXmAm5dfoqmnE5QeeGjzcjDZyA6iQLMBZ5"
+
+usth:
+  # Cập nhật 3 giá trị này mỗi khi token hết hạn (~24h)
+  # Lấy từ: erp.usth.edu.vn → F12 → Network → query-student-timetable-in-range → Headers
+  jsessionid:    "TDKSQY_HrOaQuwwTefIOzA.node0"
+  student_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiZ05ybTJ6LzcxUy9wb094NGZrWThCV2tkM3lHemtaN3hEL01kS3N3bmdqK1lmaStXMzEwRlk3WGl4ZExvRWlCTU55bVBkYkhQVXZoNzdraVhseWp2ZEdBZWh5WDJHWVBUQnNCK0lVUVF2dk9yOVptQlFtMXZMeks5ZmFaaThPcUQiLCJpYXQiOjE3ODE2NjczMTEsImV4cCI6MTc4MTc1MzcxMX0.1iujLQYdxbOteZXHOj3WgGmACJM5hnPZJLsDZQxV7jM"
+  access_token:  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiVTJGc2RHVmtYMThoS0xWY2lWNGx4dDhMUHVOVElyZDBVZVFnWVVhYXNGTHFMOHBpNFZhRG1YeWRzcVlLbmUxdS9aN0FabFBNalFCUHRzNEhoSmRGVEJDa2w2SnIwQll1NzRxYzlac1J6bnM9IiwiaWF0IjoxNzgxNjY3MzExLCJleHAiOjE3ODE3NTM3MTF9.WTXDSYizfCudLOe_-tRb7WCJ9vtqCU-XmQlbQpPFX_g"
+
+# Fetch lịch từ server USTH mỗi X phút
+fetch_interval_minutes: 30
+
+# Nhắc trước giờ học
+reminders:
+  - hours_before: 24    # nhắc trước 1 ngày
+  - hours_before: 1     # nhắc trước 1 giờ
+  - hours_before: 0.5   # nhắc trước 30 phút
+
+
+daily_schedule_enabled: false

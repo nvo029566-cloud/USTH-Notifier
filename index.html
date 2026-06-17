@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USTH Schedule Bot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg:        #0f1117;
+    --surface:   #1a1d27;
+    --surface2:  #222536;
+    --border:    #2e3248;
+    --accent:    #5865f2;
+    --accent2:   #7983f5;
+    --green:     #3ba55d;
+    --red:       #ed4245;
+    --yellow:    #faa61a;
+    --text:      #e3e5e8;
+    --muted:     #72767d;
+    --radius:    12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: var(--accent);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-weight: 700; font-size: 15px; line-height: 1.2; }
+  .logo-sub  { font-size: 11px; color: var(--muted); }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    transition: all .15s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover   { background: var(--surface2); color: var(--text); }
+  .nav-item.active  { background: var(--accent); color: #fff; }
+  .nav-item .icon   { font-size: 16px; width: 20px; text-align: center; }
+
+  .sidebar-section {
+    font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); padding: 8px 12px 4px;
+    margin-top: 8px;
+  }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .status-dot.on  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.off { background: var(--muted); }
+
+  /* ── Main ── */
+  .main {
+    padding: 32px;
+    overflow-y: auto;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-header {
+    margin-bottom: 28px;
+  }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-sub   { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 13px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 14px;
+  }
+
+  /* ── Form ── */
+  .field { margin-bottom: 16px; }
+
+  label {
+    display: block;
+    font-size: 12px; font-weight: 600;
+    color: var(--muted); margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: .4px;
+  }
+
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text);
+    transition: border-color .15s;
+    outline: none;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); font-family: 'Inter', sans-serif; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; border: none;
+    transition: all .15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #4752c4; }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-danger  { background: var(--red);   color: #fff; }
+  .btn-ghost   { background: var(--surface2); color: var(--text); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+  /* ── Status banner ── */
+  .banner {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .banner.success { background: #1e3a2f; border: 1px solid #2d5a3d; color: #3ba55d; }
+  .banner.error   { background: #3a1e1e; border: 1px solid #5a2d2d; color: #ed4245; }
+  .banner.warn    { background: #3a2e1e; border: 1px solid #5a4a2d; color: #faa61a; }
+  .banner.info    { background: #1e2a3a; border: 1px solid #2d3d5a; color: #5865f2; }
+
+  /* ── Stats row ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .stat-num   { font-size: 28px; font-weight: 700; line-height: 1; }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stat-card.accent { border-color: var(--accent); }
+  .stat-card.green  { border-color: var(--green); }
+
+  /* ── Schedule table ── */
+  .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .session-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .session-date {
+    text-align: center;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px;
+  }
+  .session-date .day  { font-size: 22px; font-weight: 700; line-height: 1; }
+  .session-date .mon  { font-size: 10px; color: var(--muted); margin-top: 2px; }
+  .session-date .dow  { font-size: 10px; color: var(--accent2); font-weight: 600; }
+
+  .session-info .course { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .session-meta {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    font-size: 12px; color: var(--muted);
+  }
+  .session-meta span { display: flex; align-items: center; gap: 4px; }
+
+  .session-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-lt   { background: #1e2a3a; color: #5865f2; }
+  .badge-th   { background: #1e3a2f; color: #3ba55d; }
+  .badge-exam { background: #3a1e1e; color: #ed4245; }
+  .badge-bt   { background: #3a2e1e; color: #faa61a; }
+
+  .empty-state {
+    text-align: center; padding: 48px;
+    color: var(--muted);
+  }
+  .empty-state .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── Token section ── */
+  .token-hint {
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .token-hint strong { color: var(--text); }
+
+  /* ── Log ── */
+  .log-box {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    height: 200px;
+    overflow-y: auto;
+    line-height: 1.8;
+  }
+  .log-line.ok   { color: var(--green); }
+  .log-line.err  { color: var(--red); }
+  .log-line.warn { color: var(--yellow); }
+  .log-line.info { color: var(--accent2); }
+  .log-line.muted{ color: var(--muted); }
+
+  /* ── Toggle ── */
+  .toggle-row {
+    display: flex; align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; font-weight: 500; }
+  .toggle-sub   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .toggle {
+    position: relative; width: 40px; height: 22px;
+    cursor: pointer;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--border);
+    border-radius: 22px;
+    transition: .2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent); }
+  .toggle-thumb {
+    position: absolute;
+    width: 16px; height: 16px;
+    background: #fff; border-radius: 50%;
+    top: 3px; left: 3px;
+    transition: .2s;
+  }
+  .toggle input:checked ~ .toggle-thumb { left: 21px; }
+
+  /* ── Reminder pills ── */
+  .reminder-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .pill .remove { font-size: 14px; opacity: .7; }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📅</div>
+      <div>
+        <div class="logo-text">USTH Bot</div>
+        <div class="logo-sub">Lịch học tự động</div>
+      </div>
+    </div>
+
+    <button class="nav-item active" onclick="showPage('dashboard')">
+      <span class="icon">🏠</span> Tổng quan
+      <span class="status-dot on" id="dot-main"></span>
+    </button>
+    <button class="nav-item" onclick="showPage('schedule')">
+      <span class="icon">📚</span> Lịch học
+    </button>
+
+    <div class="sidebar-section">Cài đặt</div>
+    <button class="nav-item" onclick="showPage('token')">
+      <span class="icon">🔑</span> Token USTH
+    </button>
+    <button class="nav-item" onclick="showPage('notify')">
+      <span class="icon">🔔</span> Thông báo
+    </button>
+    <button class="nav-item" onclick="showPage('discord')">
+      <span class="icon">💬</span> Discord
+    </button>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Tổng quan</div>
+        <div class="page-sub">Trạng thái bot và lịch học sắp tới</div>
+      </div>
+
+      <div id="banner-area"></div>
+
+      <div class="stats-row">
+        <div class="stat-card accent">
+          <div class="stat-num" id="stat-total">—</div>
+          <div class="stat-label">Buổi học tìm thấy</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-today">—</div>
+          <div class="stat-label">Hôm nay</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-num" id="stat-upcoming">—</div>
+          <div class="stat-label">7 ngày tới</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="stat-token">—</div>
+          <div class="stat-label">Token còn lại</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Buổi học sắp tới</div>
+        <div class="schedule-list" id="upcoming-list">
+          <div class="empty-state">
+            <div class="empty-icon">🔑</div>
+            <p>Nhập token USTH để xem lịch học</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nhật ký hoạt động</div>
+        <div class="log-box" id="log-box">
+          <div class="log-line muted">[--:--] Bot chưa khởi động...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule -->
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <div class="page-title">Toàn bộ lịch học</div>
+        <div class="page-sub" id="schedule-sub">—</div>
+      </div>
+      <div class="schedule-list" id="full-schedule-list">
+        <div class="empty-state">
+          <div class="empty-icon">📭</div>
+          <p>Chưa có dữ liệu — nhập token và fetch lịch</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Token -->
+    <div class="page" id="page-token">
+      <div class="page-header">
+        <div class="page-title">Token USTH</div>
+        <div class="page-sub">Cập nhật mỗi ~24h khi token hết hạn</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Hướng dẫn lấy token</div>
+        <div class="token-hint">
+          <strong>1.</strong> Vào <strong>erp.usth.edu.vn</strong> → Học tập → Thời khoá biểu<br>
+          <strong>2.</strong> Nhấn <strong>F12</strong> → tab <strong>Application</strong> → <strong>Cookies</strong> → <strong>https://erp.usth.edu.vn</strong><br>
+          <strong>3.</strong> Tìm và copy giá trị của 3 cookie: <strong>JSESSIONID</strong>, <strong>x-student-portal-token</strong>, <strong>x-access-token</strong>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Nhập token</div>
+
+        <div class="field">
+          <label>JSESSIONID</label>
+          <input type="text" id="input-jsessionid" placeholder="FNtsyuix75veBuqScSV1OA.node0">
+        </div>
+        <div class="field">
+          <label>x-student-portal-token</label>
+          <input type="text" id="input-student-token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+        <div class="field">
+          <label>x-access-token</label>
+          <input type="text" id="input-access-token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveAndFetch()">💾 Lưu & Fetch lịch</button>
+          <button class="btn btn-ghost" onclick="loadSaved()">↩ Khôi phục token cũ</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notify -->
+    <div class="page" id="page-notify">
+      <div class="page-header">
+        <div class="page-title">Cài đặt thông báo</div>
+        <div class="page-sub">Chọn thời điểm nhắc trước buổi học</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Loại thông báo</div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">📅 Lịch ngày</div>
+            <div class="toggle-sub">Gửi lịch hôm nay lúc 6:00 sáng</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="tog-daily" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">🔄 Thay đổi lịch</div>
+            <div class="toggle-sub">Thông báo ngay khi lịch trường cập nhật</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="tog-change" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label">⏰ Nhắc trước giờ học</div>
+            <div class="toggle-sub">Nhắc theo các mốc thời gian bên dưới</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="tog-reminder" checked>
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Mốc nhắc nhở</div>
+        <div class="reminder-pills" id="reminder-pills">
+          <div class="pill active" data-val="24">🌙 1 ngày trước</div>
+          <div class="pill active" data-val="1">⏰ 1 giờ trước</div>
+          <div class="pill active" data-val="0.5">🔔 30 phút trước</div>
+        </div>
+        <div style="margin-top:12px; font-size:12px; color:var(--muted)">
+          Bấm để bật/tắt từng mốc nhắc
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Tần suất kiểm tra lịch</div>
+        <div class="field">
+          <label>Fetch mỗi (phút)</label>
+          <input type="number" id="input-interval" value="30" min="5" max="120" style="width:120px">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="saveSettings()">Lưu cài đặt</button>
+      </div>
+    </div>
+
+    <!-- Discord -->
+    <div class="page" id="page-discord">
+      <div class="page-header">
+        <div class="page-title">Discord Webhook</div>
+        <div class="page-sub">Cấu hình kênh nhận thông báo</div>
+      </div>
+
+      <div class="card">
+        <div class="field">
+          <label>Webhook URL</label>
+          <input type="text" id="input-webhook"
+            placeholder="https://discord.com/api/webhooks/...">
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveWebhook()">💾 Lưu</button>
+          <button class="btn btn-ghost" onclick="testWebhook()">📨 Gửi test</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  sessions: [],
+  lastHash: "",
+  config: {
+    jsessionid:    "",
+    studentToken:  "",
+    accessToken:   "",
+    webhookUrl:    "",
+    interval:      30,
+    reminders:     [24, 1, 0.5],
+    dailyEnabled:  true,
+    changeEnabled: true,
+    reminderEnabled: true,
+  },
+  botRunning: false,
+  fetchTimer: null,
+  reminderTimer: null,
+  tokenExpiry: null,
+  reminded: new Set(),
+  lastDaily: "",
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const TIET = {1:"07:30",2:"08:25",3:"09:25",4:"10:20",5:"11:15",6:"12:10",
+              7:"13:00",8:"13:55",9:"14:50",10:"15:45",11:"16:40",12:"17:35",
+              13:"18:30",14:"19:25",15:"20:20"};
+
+function parseTime(v) {
+  if (v <= 0) return "?";
+  if (v > 100) return `${String(Math.floor(v/100)).padStart(2,'0')}:${String(v%100).padStart(2,'0')}`;
+  return TIET[v] || `Tiết ${v}`;
+}
+
+function tsToDate(ms) {
+  return new Date(ms + 7*3600*1000); // UTC+7
+}
+
+function dayName(d) {
+  return ["CN","T2","T3","T4","T5","T6","T7"][d.getUTCDay()];
+}
+
+function todayStr() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+function sessionHash(sessions) {
+  return sessions.map(s=>s.key).join("|");
+}
+
+function parseSessions(data) {
+  const list = [];
+  for (const item of data) {
+    const course   = item.courseName || "";
+    const classId  = item.classId    || "";
+    const ctype    = item.classType  || "";
+    for (let cal of (item._calendars || [])) {
+      if (typeof cal === "string") cal = JSON.parse(cal);
+      const ts = cal.date || -1;
+      if (ts <= 0) continue;
+      const fromV = cal.from || 0;
+      const toV   = cal.to   || 0;
+      const place = cal.place || "?";
+      const teachers = (cal.teacherNames || []).join(", ") || "?";
+      const dt    = tsToDate(ts);
+      const start = parseTime(fromV);
+      const end   = parseTime(toV);
+      const tiet  = fromV <= 15 ? `Tiết ${fromV}–${toV}` : `${start}–${end}`;
+      const dateStr = `${String(dt.getUTCDate()).padStart(2,'0')}/${String(dt.getUTCMonth()+1).padStart(2,'0')}/${dt.getUTCFullYear()}`;
+      let startDt;
+      try {
+        const [hh,mm] = start.split(":").map(Number);
+        startDt = new Date(dt);
+        startDt.setUTCHours(hh - 7, mm, 0, 0);
+      } catch { continue; }
+      list.push({ course, classId, ctype, dateStr,
+        dow: dayName(dt), day: dt.getUTCDate(), month: dt.getUTCMonth()+1,
+        start, end, tiet, place, teacher: teachers,
+        startDt, key: `${classId}_${ts}_${fromV}` });
+    }
+  }
+  list.sort((a,b) => a.startDt - b.startDt);
+  return list;
+}
+
+// ── Nav ────────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── Log ────────────────────────────────────────────────────────────────────
+function log(msg, type="info") {
+  const box = document.getElementById('log-box');
+  const now = new Date();
+  const t = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.textContent = `[${t}] ${msg}`;
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Banner ─────────────────────────────────────────────────────────────────
+function showBanner(msg, type="info") {
+  const icons = { success:"✅", error:"❌", warn:"⚠️", info:"ℹ️" };
+  document.getElementById('banner-area').innerHTML =
+    `<div class="banner ${type}">${icons[type]} ${msg}</div>`;
+}
+
+// ── Discord ────────────────────────────────────────────────────────────────
+async function sendDiscord(content) {
+  const url = state.config.webhookUrl;
+  if (!url) return false;
+  try {
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content, username: "USTH Lịch Học 📅" })
+    });
+    return r.status === 204 || r.status === 200;
+  } catch { return false; }
+}
+
+// ── Fetch timetable ────────────────────────────────────────────────────────
+async function fetchTimetable() {
+  const { jsessionid, studentToken, accessToken } = state.config;
+  if (!studentToken || !accessToken) {
+    log("Chưa có token — vào tab Token để nhập", "warn");
+    return null;
+  }
+
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endRaw = new Date(now.getFullYear(), now.getMonth() + 4, 0, 23, 59, 59);
+  const fromTime = start.getTime();
+  const toTime   = endRaw.getTime();
+
+  const cookie = `JSESSIONID=${jsessionid}; x-student-portal-token=${studentToken}; x-access-token=${accessToken}`;
+
+  try {
+    const r = await fetch(
+      "https://erp.usth.edu.vn/student-services/api/v2/timetables/query-student-timetable-in-range",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-student-portal-token": studentToken,
+          "x-access-token": accessToken,
+          "Cookie": cookie,
+          "Referer": "https://erp.usth.edu.vn/students/learn/timetable",
+          "Origin": "https://erp.usth.edu.vn",
+        },
+        body: JSON.stringify({ fromTime, toTime }),
+      }
+    );
+    if (r.status === 401) { log("Token hết hạn!", "err"); return null; }
+    if (!r.ok) { log(`Lỗi API: ${r.status}`, "err"); return null; }
+    return await r.json();
+  } catch(e) {
+    log(`Lỗi kết nối: ${e.message}`, "err");
+    return null;
+  }
+}
+
+// ── Render sessions ────────────────────────────────────────────────────────
+function badgeClass(ctype) {
+  if (!ctype) return "badge-lt";
+  if (ctype.includes("TH")) return "badge-th";
+  if (ctype.includes("EXAM")) return "badge-exam";
+  if (ctype.includes("BT"))   return "badge-bt";
+  return "badge-lt";
+}
+
+function renderSession(s) {
+  return `
+  <div class="session-card">
+    <div class="session-date">
+      <div class="day">${String(s.day).padStart(2,'0')}</div>
+      <div class="mon">Tháng ${s.month}</div>
+      <div class="dow">${s.dow}</div>
+    </div>
+    <div class="session-info">
+      <div class="course">${s.course}</div>
+      <div class="session-meta">
+        <span>⏰ ${s.tiet} (${s.start}–${s.end})</span>
+        <span>📍 ${s.place}</span>
+        <span>👨‍🏫 ${s.teacher}</span>
+      </div>
+    </div>
+    <span class="session-badge ${badgeClass(s.ctype)}">${s.ctype || 'LT'}</span>
+  </div>`;
+}
+
+function updateUI() {
+  const sessions = state.sessions;
+  const todayS = todayStr();
+  const now = new Date();
+  const in7 = new Date(now.getTime() + 7*24*3600*1000);
+
+  // Stats
+  const todays   = sessions.filter(s => s.dateStr === todayS);
+  const upcoming = sessions.filter(s => s.startDt >= now && s.startDt <= in7);
+  document.getElementById('stat-total').textContent    = sessions.length;
+  document.getElementById('stat-today').textContent    = todays.length;
+  document.getElementById('stat-upcoming').textContent = upcoming.length;
+
+  // Token expiry
+  if (state.tokenExpiry) {
+    const diff = Math.round((state.tokenExpiry - now) / 3600000);
+    document.getElementById('stat-token').textContent = diff > 0 ? `${diff}h` : "Hết hạn";
+  }
+
+  // Upcoming list (next 5)
+  const next5 = sessions.filter(s => s.startDt >= now).slice(0, 5);
+  const upEl = document.getElementById('upcoming-list');
+  if (next5.length) {
+    upEl.innerHTML = next5.map(renderSession).join("");
+  } else {
+    upEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🎉</div><p>Không có lịch học sắp tới</p></div>`;
+  }
+
+  // Full schedule
+  const fullEl = document.getElementById('full-schedule-list');
+  const future = sessions.filter(s => s.startDt >= new Date(now.getFullYear(), now.getMonth(), 1));
+  document.getElementById('schedule-sub').textContent = `${sessions.length} buổi học tìm thấy`;
+  if (future.length) {
+    fullEl.innerHTML = future.map(renderSession).join("");
+  } else {
+    fullEl.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><p>Không có lịch học trong tương lai</p></div>`;
+  }
+}
+
+// ── Check reminders ────────────────────────────────────────────────────────
+function checkReminders() {
+  if (!state.config.reminderEnabled) return;
+  const now = new Date();
+  const todayKey = todayStr();
+
+  // Reset reminded set ngày mới
+  if (!state._remindDate || state._remindDate !== todayKey) {
+    state.reminded = new Set();
+    state._remindDate = todayKey;
+  }
+
+  // Nhắc 1 ngày trước: gộp tất cả buổi ngày mai
+  if (state.config.reminders.includes(24)) {
+    const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${String(tomorrow.getDate()).padStart(2,'0')}/${String(tomorrow.getMonth()+1).padStart(2,'0')}/${tomorrow.getFullYear()}`;
+    const rid = `tomorrow_${tomorrowStr}`;
+    const tomorrowSessions = state.sessions.filter(s => s.dateStr === tomorrowStr);
+    if (tomorrowSessions.length && !state.reminded.has(rid)) {
+      const firstSession = tomorrowSessions[0];
+      const notifyAt = new Date(firstSession.startDt.getTime() - 24*3600*1000);
+      const diff = (notifyAt - now) / 1000;
+      if (diff >= 0 && diff <= 65) {
+        const lines = tomorrowSessions.map(s =>
+          `▸ **${s.course}** | ${s.tiet} (${s.start}–${s.end}) | 📍 ${s.place}`
+        ).join("\n");
+        sendDiscord(`🔔 **Nhắc lịch học ngày mai — ${tomorrowStr}!**\n\n${lines}`);
+        log(`Đã nhắc 1 ngày: ${tomorrowSessions.length} buổi ngày ${tomorrowStr}`, "ok");
+        state.reminded.add(rid);
+      }
+    }
+  }
+
+  // Nhắc 1 giờ và 30 phút
+  for (const hb of state.config.reminders.filter(h => h < 24)) {
+    const label = hb < 1 ? `${Math.round(hb*60)} phút` : `${hb} giờ`;
+    for (const s of state.sessions) {
+      const rid = `${s.key}_${label}`;
+      if (state.reminded.has(rid)) continue;
+      const notifyAt = new Date(s.startDt.getTime() - hb*3600*1000);
+      const diff = (notifyAt - now) / 1000;
+      if (diff >= 0 && diff <= 65) {
+        sendDiscord(
+          `🔔 **Nhắc lịch học — còn ${label}!**\n\n` +
+          `📚 **${s.course}**\n📅 ${s.dow}, ${s.dateStr}\n` +
+          `⏰ ${s.tiet} (${s.start}–${s.end})\n🏫 ${s.place}\n👨‍🏫 ${s.teacher}`
+        );
+        log(`Nhắc [${label}]: ${s.course}`, "ok");
+        state.reminded.add(rid);
+      }
+    }
+  }
+
+  // Lịch ngày 6h sáng
+  if (state.config.dailyEnabled) {
+    if (now.getHours() === 6 && now.getMinutes() === 0 && state.lastDaily !== todayKey) {
+      const todaySessions = state.sessions.filter(s => s.dateStr === todayKey);
+      let msg;
+      if (todaySessions.length) {
+        const lines = todaySessions.map(s => `▸ **${s.course}** | ${s.tiet} | 📍 ${s.place}`).join("\n");
+        msg = `📅 **Lịch học hôm nay — ${todayKey}**\n\n${lines}`;
+      } else {
+        msg = `📅 **Lịch học hôm nay — ${todayKey}**\n\n🎉 Không có lịch học!`;
+      }
+      sendDiscord(msg);
+      log(`Đã gửi lịch ngày ${todayKey}`, "ok");
+      state.lastDaily = todayKey;
+    }
+  }
+}
+
+// ── Start bot ──────────────────────────────────────────────────────────────
+async function startBot() {
+  log("Đang fetch lịch học từ USTH...", "info");
+  const raw = await fetchTimetable();
+  if (!raw) return;
+
+  const newSessions = parseSessions(raw);
+  const newHash = sessionHash(newSessions);
+
+  // Detect changes
+  if (state.lastHash && newHash !== state.lastHash && state.config.changeEnabled) {
+    const oldKeys = new Set(state.sessions.map(s=>s.key));
+    const newKeys = new Set(newSessions.map(s=>s.key));
+    const added   = newSessions.filter(s => !oldKeys.has(s.key));
+    const removed = state.sessions.filter(s => !newKeys.has(s.key));
+    if (added.length || removed.length) {
+      const lines = [
+        ...added.map(s   => `✅ Thêm: ${s.course} — ${s.dow}, ${s.dateStr} | ${s.tiet} | ${s.place}`),
+        ...removed.map(s => `❌ Xóa: ${s.course} — ${s.dow}, ${s.dateStr} | ${s.tiet} | ${s.place}`),
+      ];
+      sendDiscord(`🔄 **Lịch học vừa thay đổi!**\n\n${lines.join("\n")}`);
+      log(`Phát hiện thay đổi: +${added.length} -${removed.length} buổi`, "warn");
+    }
+  }
+
+  state.sessions = newSessions;
+  state.lastHash = newHash;
+
+  // Parse token expiry from JWT
+  try {
+    const payload = JSON.parse(atob(state.config.studentToken.split(".")[1]));
+    state.tokenExpiry = new Date(payload.exp * 1000);
+  } catch {}
+
+  updateUI();
+  log(`Cập nhật xong: ${newSessions.length} buổi học`, "ok");
+
+  if (!state.botRunning) {
+    state.botRunning = true;
+    document.getElementById('dot-main').className = "status-dot on";
+    showBanner("Bot đang chạy — sẽ tự động thông báo khi có lịch học", "success");
+
+    // Reminder check mỗi phút
+    state.reminderTimer = setInterval(checkReminders, 60000);
+    log("Bot đã khởi động ✓", "ok");
+
+    // Gửi Discord thông báo khởi động
+    if (state.config.webhookUrl) {
+      sendDiscord(`✅ **USTH Bot khởi động!**\nTìm thấy **${newSessions.length}** buổi học có lịch cụ thể.`);
+    }
+  }
+
+  // Schedule fetch tiếp theo
+  if (state.fetchTimer) clearTimeout(state.fetchTimer);
+  state.fetchTimer = setTimeout(startBot, state.config.interval * 60000);
+}
+
+// ── Save & Fetch ───────────────────────────────────────────────────────────
+function saveAndFetch() {
+  const j = document.getElementById('input-jsessionid').value.trim();
+  const s = document.getElementById('input-student-token').value.trim();
+  const a = document.getElementById('input-access-token').value.trim();
+
+  if (!s || !a) {
+    showBanner("Vui lòng nhập đủ x-student-portal-token và x-access-token", "error");
+    return;
+  }
+
+  state.config.jsessionid   = j;
+  state.config.studentToken = s;
+  state.config.accessToken  = a;
+
+  // Lưu localStorage
+  localStorage.setItem('usth_config', JSON.stringify(state.config));
+
+  log(`Token đã lưu. Bắt đầu fetch...`, "ok");
+  showPage_direct('dashboard');
+  startBot();
+}
+
+function showPage_direct(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`.nav-item[onclick*="${id}"]`)?.classList.add('active');
+}
+
+function loadSaved() {
+  const saved = localStorage.getItem('usth_config');
+  if (saved) {
+    const c = JSON.parse(saved);
+    document.getElementById('input-jsessionid').value    = c.jsessionid    || "";
+    document.getElementById('input-student-token').value = c.studentToken  || "";
+    document.getElementById('input-access-token').value  = c.accessToken   || "";
+    log("Đã khôi phục token đã lưu", "ok");
+  } else {
+    log("Không có token cũ", "warn");
+  }
+}
+
+function saveWebhook() {
+  const url = document.getElementById('input-webhook').value.trim();
+  state.config.webhookUrl = url;
+  localStorage.setItem('usth_config', JSON.stringify(state.config));
+  log("Đã lưu Webhook URL", "ok");
+  showBanner("Đã lưu Webhook Discord", "success");
+}
+
+async function testWebhook() {
+  const ok = await sendDiscord("✅ **Test thành công!** USTH Bot đã kết nối với Discord.");
+  if (ok) log("Gửi test Discord thành công", "ok");
+  else     log("Gửi test thất bại — kiểm tra Webhook URL", "err");
+}
+
+function saveSettings() {
+  state.config.interval = parseInt(document.getElementById('input-interval').value) || 30;
+  state.config.dailyEnabled   = document.getElementById('tog-daily').checked;
+  state.config.changeEnabled  = document.getElementById('tog-change').checked;
+  state.config.reminderEnabled= document.getElementById('tog-reminder').checked;
+
+  const active = [...document.querySelectorAll('.pill.active')].map(p => parseFloat(p.dataset.val));
+  state.config.reminders = active;
+
+  localStorage.setItem('usth_config', JSON.stringify(state.config));
+  log("Đã lưu cài đặt thông báo", "ok");
+  showBanner("Cài đặt đã được lưu", "success");
+}
+
+// Reminder pills toggle
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => p.classList.toggle('active'));
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+(function init() {
+  const saved = localStorage.getItem('usth_config');
+  if (saved) {
+    try {
+      const c = JSON.parse(saved);
+      Object.assign(state.config, c);
+      if (c.webhookUrl) document.getElementById('input-webhook').value = c.webhookUrl;
+      if (c.interval)   document.getElementById('input-interval').value = c.interval;
+      if (c.jsessionid)   document.getElementById('input-jsessionid').value    = c.jsessionid;
+      if (c.studentToken) document.getElementById('input-student-token').value = c.studentToken;
+      if (c.accessToken)  document.getElementById('input-access-token').value  = c.accessToken;
+
+      if (c.studentToken && c.accessToken) {
+        log("Tìm thấy token đã lưu — đang fetch lịch...", "info");
+        startBot();
+      }
+    } catch {}
+  } else {
+    log("Chào mừng! Vào tab Token để nhập thông tin đăng nhập.", "info");
+  }
+})();
+</script>
+</body>
+</html>
